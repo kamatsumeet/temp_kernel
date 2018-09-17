@@ -1,0 +1,19 @@
+NVIDIA Camera sensor imx274 driver interface.
+
+Properties:
+- compatible : The driver is compatible with
+	"nvidia,imx274".
+
+- reg : Should contain I2C slave address of the driver.
+
+- reset-gpios : imx274 reset GPIO
+
+Example:
+
+	imx274@1a {
+		compatible = "nvidia,imx274";
+		reg = <0x1a>;
+		/* gpio PBB3 */
+		reset-gpios = <&gpio 219 0>;
+		status = "okay";
+	};

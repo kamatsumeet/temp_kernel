@@ -1,0 +1,52 @@
+From 41f31de242a3bb03740daff7770c4402efdddcf8 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 13 Jan 2016 17:41:53 +0100
+Subject: [PATCH 255/365] move update_migrate_disable() definition
+
+so it is not within CONFIG_SMP, fixes build on SMP=n
+
+Reported-by: kernel test robot <ying.huang@linux.intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/sched/core.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 672dab3..88bfe2d 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -1096,6 +1096,15 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
+ 		rq_clock_skip_update(rq, true);
+ }
+ 
++#if defined(CONFIG_PREEMPT_RT_FULL) && defined(CONFIG_SMP)
++#define MIGRATE_DISABLE_SET_AFFIN	(1<<30) /* Can't make a negative */
++#define migrate_disabled_updated(p)	((p)->migrate_disable & MIGRATE_DISABLE_SET_AFFIN)
++#define migrate_disable_count(p)	((p)->migrate_disable & ~MIGRATE_DISABLE_SET_AFFIN)
++#else
++static inline void update_migrate_disable(struct task_struct *p) { }
++#define migrate_disabled_updated(p)		0
++#endif
++
+ #ifdef CONFIG_SMP
+ /*
+  * This is how migration works:
+@@ -1213,15 +1222,6 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
+ 	p->nr_cpus_allowed = cpumask_weight(new_mask);
+ }
+ 
+-#if defined(CONFIG_PREEMPT_RT_FULL) && defined(CONFIG_SMP)
+-#define MIGRATE_DISABLE_SET_AFFIN	(1<<30) /* Can't make a negative */
+-#define migrate_disabled_updated(p)	((p)->migrate_disable & MIGRATE_DISABLE_SET_AFFIN)
+-#define migrate_disable_count(p)	((p)->migrate_disable & ~MIGRATE_DISABLE_SET_AFFIN)
+-#else
+-static inline void update_migrate_disable(struct task_struct *p) { }
+-#define migrate_disabled_updated(p)		0
+-#endif
+-
+ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+ {
+ 	struct rq *rq = task_rq(p);
+-- 
+2.7.4
+
